@@ -2,6 +2,17 @@
 
 Get News is a App to read top and latest news headlines of the top news websites like "Time","The Newyork Times",...and 50+ other websites around the world.
 
+# Features
+
+## It can display top and latest news of 50+ famous news websites around the world
+## It has a Dark theme plugin for a pleasant experience at night.
+## It is responsive
+
+# Tech Used
+### 1.React
+### 2.Redux
+### 3.styled-components
+
 ## Installation
 ```
 1.npm install
