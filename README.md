@@ -21,7 +21,7 @@ Get News is a App to read top and latest news headlines of the top news websites
 ```diff
 + npm install
 + npm start
-+ run it on your machine.
++ it will run on your machine(localhost).
 ```
 
 ## Contributing
