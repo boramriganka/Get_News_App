@@ -7,6 +7,7 @@ Get News is a App to read top and latest news headlines of the top news websites
 # Features
 ```diff
 - It can display top and latest news of 50+ famous news websites around the world
+- Tech News button which on clicked only shows you tech related news.
 - It has a Dark theme plugin for a pleasant experience at night.
 - It is responsive
 ```
