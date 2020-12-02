@@ -18,9 +18,9 @@ Get News is a App to read top and latest news headlines of the top news websites
 
 ## Installation
 
-1.npm install
-2.npm start
-3.run it on your machine.
+### 1.npm install
+### 2.npm start
+### 3.run it on your machine.
 
 
 ## Contributing
