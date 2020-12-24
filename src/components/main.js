@@ -21,9 +21,13 @@ const Main = () => {
     //action to dispatch
     const getCustomNews = (source, relevance) => dispatch(fetchCustomNews(source, relevance));
 
-    //get the sources
-    const getSources = () => {
-        fetch("https://newsapi.org/v1/sources?")
+ 
+
+
+
+    //effect
+    useEffect(()=>{
+           fetch("https://newsapi.org/v1/sources?")
         .then(res => {
             console.log(customNewsSelector.customNews);
             return res.json();
@@ -33,13 +37,6 @@ const Main = () => {
             console.log(response);
             setSources(response.sources)
         })
-    }
-
-
-
-    //effect
-    useEffect(()=>{
-        getSources();
     }, [source])
 
 
