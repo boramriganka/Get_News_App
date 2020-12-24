@@ -40,7 +40,7 @@ const Main = () => {
     //effect
     useEffect(()=>{
         getSources();
-    }, [])
+    }, [source])
 
 
     const getNews = (e) => {
