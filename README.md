@@ -25,8 +25,12 @@ Get News is a App to read top and latest news headlines of the top news websites
 + it will run on your machine(localhost).
 ```
 
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+## Reason why it is not deployed
+
+```diff
++ This was built using the "news.org api"
+- To deploy in production we need a production plan
+- which is paid and expensive, that's why it is not deployed yet.
 
 
 ## Demo
