@@ -37,7 +37,7 @@ const Main = () => {
             console.log(response);
             setSources(response.sources)
         })
-    }, [source])
+    }, [sources])
 
 
     const getNews = (e) => {
