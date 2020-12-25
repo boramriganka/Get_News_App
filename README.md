@@ -30,8 +30,8 @@ Get News is a App to read top and latest news headlines of the top news websites
 ```diff
 + This was built using the "news.org api"
 - To deploy in production we need a production plan
-- which is paid and expensive, that's why it is not deployed yet.
-
+- which is paid and expensive,that's why it is not deployed yet.
+```
 
 ## Demo
 <img src="src/screenshot.png" width="400"><br><img src="src/screenshot1.png" width="400">
