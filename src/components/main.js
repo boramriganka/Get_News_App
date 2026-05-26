@@ -29,7 +29,6 @@ const Main = () => {
     useEffect(()=>{
            fetch("https://newsapi.org/v1/sources?")
         .then(res => {
-            console.log(customNewsSelector.customNews);
             return res.json();
             
         })
@@ -37,7 +36,7 @@ const Main = () => {
             console.log(response);
             setSources(response.sources)
         })
-    }, [sources])
+    }, [])
 
 
     const getNews = (e) => {

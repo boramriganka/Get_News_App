@@ -12,6 +12,7 @@ const Tech = () => {
 
     useEffect(()=>{
        getTechNews();
+       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
 
@@ -23,7 +24,7 @@ const Tech = () => {
                     {techSelector.techNews.map(x => {
                         return (
                             <div className="post" key={x.title}> 
-                                <img src={x.urlToImage} />
+                                <img src={x.urlToImage} alt={x.title} />
                                 <h2>{x.title}</h2>
                                 <p>{x.description}</p>
                             </div>
