@@ -1,8 +1,5 @@
 import React from 'react';
 
-//image
-import image from '../src/836 [Converted].svg';
-
 import image1 from '../src/news1.jpg';
 
 import Store from './store/store';
