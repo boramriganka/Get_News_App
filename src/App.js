@@ -51,7 +51,7 @@ const App = () => {
 								<h1>News</h1>
 							</div>
 
-							<img src={image1} />
+							<img src={image1} alt="News header" />
 						</header>
 
 						<main>
