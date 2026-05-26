@@ -6,7 +6,7 @@ import { Provider } from 'react-redux';
 
 import { BrowserRouter } from 'react-router-dom';
 //routes
-import AppRoutes from './routes';
+import Routes from './routes';
 import { useDarkMode } from './components/useDarkMode';
 import Header from './components/Header';
 import CategoryTabs from './components/CategoryTabs';
@@ -43,22 +43,22 @@ const Footer = styled.footer`
 `;
 
 const App = () => {
-  const [theme, themeToggler] = useDarkMode();
+	const [theme, themeToggler] = useDarkMode();
   const [activeCategory, setActiveCategory] = useState('All');
 
-  const themeMode = theme === 'light' ? lightTheme : darkTheme;
-  return (
-    <Provider store={Store}>
-      <ThemeProvider theme={themeMode}>
-        <BrowserRouter>
-          <GlobalStyles />
-          <AppContainer>
-            <Header theme={theme} toggleTheme={themeToggler} />
+	const themeMode = theme === 'light' ? lightTheme : darkTheme;
+	return (
+		<Provider store={Store}>
+			<ThemeProvider theme={themeMode}>
+				<BrowserRouter>
+					<GlobalStyles />
+					<AppContainer>
+						<Header theme={theme} toggleTheme={themeToggler} />
             <CategoryTabs activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
 
-            <MainContent>
-              <AppRoutes />
-            </MainContent>
+						<MainContent>
+							<Routes />
+						</MainContent>
 
             <Footer>
               JOURNAL<span>.</span>
@@ -66,11 +66,11 @@ const App = () => {
                 © 2026 Premium Editorial Experience. All rights reserved.
               </p>
             </Footer>
-          </AppContainer>
-        </BrowserRouter>
-      </ThemeProvider>
-    </Provider>
-  );
+					</AppContainer>
+				</BrowserRouter>
+			</ThemeProvider>
+		</Provider>
+	);
 };
 
 export default App;
