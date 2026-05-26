@@ -1,35 +1,29 @@
 import React from 'react';
 import { func, string } from 'prop-types';
 import styled from "styled-components";
-import Brightness4Icon from '@material-ui/icons/Brightness4';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
 
 const Button = styled.button`
-  background: ${({ theme }) => theme.background};
-  border: 2px solid ${({ theme }) => theme.toggleBorder};
+  background: none;
+  border: none;
   color: ${({ theme }) => theme.text};
   cursor: pointer;
   display: flex;
-  flex-direction : column;
-  justify-content : center;
-  align-content : center;
-  font-size:0.8rem;
-  padding: 1rem;
-  margin:1rem;
-  `;
-  const Text = styled.div`
-  padding-top : 1rem;
-  margin-bottom : 1rem;
-  font : 1rem;
-  font-weight :800;
-  `;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.border};
+  }
+`;
+
 const Toggle = ({theme,  toggleTheme }) => {
     return (
-        <>
-        <Button onClick={toggleTheme} >
+        <Button onClick={toggleTheme} title="Toggle Dark/Light Mode">
             <Brightness4Icon/>
         </Button>
-        <Text>Swich theme</Text>
-        </>
     );
 };
 

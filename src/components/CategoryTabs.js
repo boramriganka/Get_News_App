@@ -24,9 +24,9 @@ const Chip = styled.button`
   white-space: nowrap;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  border: 1px solid ${({ theme, active }) => active ? theme.text : theme.border};
-  background: ${({ theme, active }) => active ? theme.text : 'transparent'};
-  color: ${({ theme, active }) => active ? theme.body : theme.textSecondary};
+  border: 1px solid ${({ theme, $active }) => $active ? theme.text : theme.border};
+  background: ${({ theme, $active }) => $active ? theme.text : 'transparent'};
+  color: ${({ theme, $active }) => $active ? theme.body : theme.textSecondary};
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -48,7 +48,7 @@ const CategoryTabs = ({ activeCategory, setActiveCategory }) => {
       {categories.map(cat => (
         <Chip
           key={cat}
-          active={activeCategory === cat}
+          $active={activeCategory === cat}
           onClick={() => setActiveCategory && setActiveCategory(cat)}
         >
           {cat}
