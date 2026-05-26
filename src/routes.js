@@ -12,6 +12,6 @@ const AppRoutes = () => (
         <Route path="/tech" element={<Tech />} />
         <Route path="/article/:id" element={<ArticleDetail />} />
     </Routes>
- )
+)
 
 export default AppRoutes;
