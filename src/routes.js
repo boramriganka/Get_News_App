@@ -1,17 +1,17 @@
 import React from "react";
-import { Switch, Route} from "react-router-dom";
+import { Routes, Route} from "react-router-dom";
 
 //import the components
 import Main from "./components/main";
 import Tech from "./components/tech";
+import ArticleDetail from "./components/ArticleDetail";
 
-const Routes = () => (
+const AppRoutes = () => (
+    <Routes>
+        <Route path="/" element={<Main />} />
+        <Route path="/tech" element={<Tech />} />
+        <Route path="/article/:id" element={<ArticleDetail />} />
+    </Routes>
+)
 
-        <Switch>
-            <Route exact path="/" component={Main} />
-            <Route exact path="/tech" component={Tech} />
-        </Switch>
-
-) 
-
-export default Routes;
+export default AppRoutes;
