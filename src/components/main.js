@@ -94,7 +94,7 @@ const Main = () => {
     useEffect(() => {
         setLoading(true);
         // Fetch sources
-        fetch(`https://newsapi.org/v2/top-headlines/sources?apiKey=${process.env.REACT_APP_KEY_NEWS}`)
+        fetch(`/api/news?endpoint=top-headlines/sources`)
             .then(res => res.json())
             .then(response => {
                 if (response.status === 'ok') {
@@ -106,7 +106,7 @@ const Main = () => {
             });
 
         // Fetch initial top headlines if articles are empty
-        fetch(`https://newsapi.org/v2/top-headlines?country=us&apiKey=${process.env.REACT_APP_KEY_NEWS}`)
+        fetch(`/api/news?endpoint=top-headlines&country=us`)
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'ok') {

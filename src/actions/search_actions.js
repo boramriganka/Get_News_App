@@ -1,9 +1,7 @@
-const api = process.env.REACT_APP_KEY_NEWS;
-
 export function searchNews(query) {
   return function (dispatch) {
     dispatch({ type: 'SEARCH_NEWS_LOADING' });
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${api}`;
+    const url = `/api/news?endpoint=everything&q=${encodeURIComponent(query)}`;
     fetch(url)
       .then((res) => res.json())
       .then((res) => {

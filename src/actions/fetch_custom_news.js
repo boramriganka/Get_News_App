@@ -1,9 +1,7 @@
-const api = process.env.REACT_APP_KEY_NEWS;
-
 export function fetchCustomNews(source, relevance) {
   return function (dispatch) {
     // NewsAPI v2: use top-headlines for sources
-    const url = `https://newsapi.org/v2/top-headlines?sources=${source}&apiKey=${api}`;
+    const url = `/api/news?endpoint=top-headlines&sources=${source}`;
     fetch(url)
       .then((res) => res.json())
       .then((res) => {

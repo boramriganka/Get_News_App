@@ -1,8 +1,6 @@
-const api = process.env.REACT_APP_KEY_NEWS;
-
 export function fetchCategoryNews(category) {
   return function (dispatch) {
-    const url = `https://newsapi.org/v2/top-headlines?category=${category}&apiKey=${api}`;
+    const url = `/api/news?endpoint=top-headlines&category=${category}`;
     fetch(url)
       .then((res) => res.json())
       .then((res) => {
