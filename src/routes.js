@@ -5,11 +5,17 @@ import { Routes, Route} from "react-router-dom";
 import Main from "./components/main";
 import Tech from "./components/tech";
 import ArticleDetail from "./components/ArticleDetail";
+import CategoryNews from "./components/CategoryNews";
+import SearchResults from "./components/SearchResults";
+import SavedArticles from "./components/SavedArticles";
 
 const AppRoutes = () => (
     <Routes>
         <Route path="/" element={<Main />} />
         <Route path="/tech" element={<Tech />} />
+        <Route path="/category/:id" element={<CategoryNews />} />
+        <Route path="/search" element={<SearchResults />} />
+        <Route path="/saved" element={<SavedArticles />} />
         <Route path="/article/:id" element={<ArticleDetail />} />
     </Routes>
 )

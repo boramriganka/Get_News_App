@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Toggle from './Toggler';
 import SearchIcon from '@mui/icons-material/Search';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import CloseIcon from '@mui/icons-material/Close';
 
 const NavContainer = styled.nav`
   position: sticky;
@@ -56,7 +57,39 @@ const NavLink = styled(Link)`
 const ActionGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
+`;
+
+const SearchContainer = styled.div`
+  display: flex;
+  align-items: center;
+  background: ${({ theme }) => theme.border};
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  margin-right: 0.5rem;
+  transition: all 0.3s ease;
+  width: ${({ $expanded }) => $expanded ? '200px' : '40px'};
+  overflow: hidden;
+
+  @media (max-width: 480px) {
+     width: ${({ $expanded }) => $expanded ? '140px' : '40px'};
+  }
+`;
+
+const SearchInput = styled.input`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.text};
+  padding: 0.25rem 0.5rem;
+  width: 100%;
+  font-family: inherit;
+  outline: none;
+  display: ${({ $visible }) => $visible ? 'block' : 'none'};
+
+  &::placeholder {
+    color: ${({ theme }) => theme.textSecondary};
+    font-size: 0.8rem;
+  }
 `;
 
 const IconButton = styled.button`
@@ -76,6 +109,18 @@ const IconButton = styled.button`
 `;
 
 const Header = ({ theme, toggleTheme }) => {
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [query, setQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter' && query.trim()) {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+      setSearchExpanded(false);
+      setQuery('');
+    }
+  };
+
   return (
     <NavContainer>
       <Logo to="/">
@@ -84,17 +129,26 @@ const Header = ({ theme, toggleTheme }) => {
 
       <NavLinks>
         <NavLink to="/">Top Stories</NavLink>
-        <NavLink to="/tech">Technology</NavLink>
-        <NavLink to="/business">Business</NavLink>
-        <NavLink to="/culture">Culture</NavLink>
+        <NavLink to="/category/technology">Technology</NavLink>
+        <NavLink to="/category/business">Business</NavLink>
+        <NavLink to="/category/entertainment">Entertainment</NavLink>
       </NavLinks>
 
       <ActionGroup>
-        <IconButton>
-          <SearchIcon />
-        </IconButton>
-        <IconButton>
-          <BookmarkBorderIcon />
+        <SearchContainer $expanded={searchExpanded}>
+          <SearchInput
+            $visible={searchExpanded}
+            placeholder="Search news..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleSearchSubmit}
+          />
+          <IconButton onClick={() => setSearchExpanded(!searchExpanded)}>
+            {searchExpanded ? <CloseIcon sx={{ fontSize: 20 }} /> : <SearchIcon sx={{ fontSize: 20 }} />}
+          </IconButton>
+        </SearchContainer>
+        <IconButton as={Link} to="/saved">
+          <BookmarkBorderIcon sx={{ fontSize: 22 }} />
         </IconButton>
         <Toggle theme={theme} toggleTheme={toggleTheme} />
       </ActionGroup>
