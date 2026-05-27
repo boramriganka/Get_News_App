@@ -21,7 +21,7 @@ const Main = () => {
     //action to dispatch
     const getCustomNews = (source, relevance) => dispatch(fetchCustomNews(source, relevance));
 
- 
+
 
 
 
@@ -29,15 +29,14 @@ const Main = () => {
     useEffect(()=>{
            fetch("https://newsapi.org/v1/sources?")
         .then(res => {
-            console.log(customNewsSelector.customNews);
             return res.json();
-            
+
         })
         .then(response => {
             console.log(response);
             setSources(response.sources)
         })
-    }, [sources])
+    }, [])
 
 
     const getNews = (e) => {
@@ -56,16 +55,16 @@ const Main = () => {
       news =  <div className="news">
                     { customNewsSelector.customNews.map(x => {
                             return (
-                                <div className="post" key={x.title}> 
+                                <div className="post" key={x.title}>
                                 <img src={x.urlToImage} alt={x.title} />
                                     <h2>{x.title}</h2>
                                     <p>{x.description}</p>
                                 </div>
                             )
-                        }) 
+                        })
                     }
-               </div>              
-    
+               </div>
+
     }else{
         news = <p>Select a source and relevance from the form</p>
     }
@@ -96,14 +95,14 @@ const Main = () => {
                         </select>
                         <input type="submit" value="Search" />
                     </div>
-                 </form>   
-           
+                 </form>
+
                     {news}
-                     
-                           
+
+
             </section>
         </React.Fragment>
-    )   
+    )
 }
 
 export default Main;
