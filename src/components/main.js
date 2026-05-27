@@ -1,108 +1,155 @@
 import React, { useState, useEffect } from 'react';
-//redux hooks
-//import the action
 import { useSelector, useDispatch } from "react-redux";
 import { fetchCustomNews } from "../actions/fetch_custom_news";
+import styled from 'styled-components';
+import ArticleCard from './ArticleCard';
+import SkeletonCard from './SkeletonCard';
 
+const PageContainer = styled.div`
+  padding: 2rem 1.5rem;
+`;
+
+const HeaderSection = styled.div`
+  margin-bottom: 3rem;
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+  padding-bottom: 2rem;
+`;
+
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2rem;
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+  }
+`;
+
+const Form = styled.form`
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+
+  .form-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+  }
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: ${({ theme }) => theme.textSecondary};
+  }
+
+  select {
+    padding: 0.75rem;
+    border: 1px solid ${({ theme }) => theme.border};
+    border-radius: 4px;
+    background: ${({ theme }) => theme.body};
+    color: ${({ theme }) => theme.text};
+    font-family: inherit;
+  }
+
+  input[type="submit"] {
+    padding: 0.75rem 2rem;
+    background: ${({ theme }) => theme.text};
+    color: ${({ theme }) => theme.body};
+    border: none;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+`;
 
 const Main = () => {
-    //news sources
     const [sources, setSources] = useState([]);
-    //select source
     const [source, setSource] = useState("");
-    //select relevance
-    const [relevance, setRelevance] = useState("");
+    const [loading, setLoading] = useState(true);
 
-    //----- connect redux
-    //here we get add the reducer that has the state we want
     const customNewsSelector = useSelector((state) => state.CustomSearch);
-    //dispatch hook
     const dispatch = useDispatch();
-    //action to dispatch
-    const getCustomNews = (source, relevance) => dispatch(fetchCustomNews(source, relevance));
 
-
-
-
-
-    //effect
-    useEffect(()=>{
-           fetch("https://newsapi.org/v1/sources?")
-        .then(res => {
-            return res.json();
-
-        })
-        .then(response => {
-            console.log(response);
-            setSources(response.sources)
-        })
-    }, [])
-
+    useEffect(() => {
+        setLoading(true);
+        fetch(`https://newsapi.org/v2/top-headlines/sources?apiKey=${process.env.REACT_APP_KEY_NEWS}`)
+            .then(res => res.json())
+            .then(response => {
+                if (response.status === 'ok') {
+                    setSources(response.sources);
+                }
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
+    }, []);
 
     const getNews = (e) => {
-        console.log(source);
         e.preventDefault();
-        if(source === "" || source === "nothing" ){
-            console.log("There is no source selected");
-        }else{
-            getCustomNews(source, relevance);
-            console.log(customNewsSelector.customNews)
+        if (source && source !== "nothing") {
+            dispatch(fetchCustomNews(source));
         }
     }
-    
-    let news;
-    if(customNewsSelector.customNews.length > 0){
-      news =  <div className="news">
-                    { customNewsSelector.customNews.map(x => {
-                            return (
-                                <div className="post" key={x.title}>
-                                <img src={x.urlToImage} alt={x.title} />
-                                    <h2>{x.title}</h2>
-                                    <p>{x.description}</p>
-                                </div>
-                            )
-                        })
-                    }
-               </div>
 
-    }else{
-        news = <p>Select a source and relevance from the form</p>
-    }
+    const articles = customNewsSelector.customNews;
 
-    return(
-        <React.Fragment>
-            <section>
-                <h1>There are {sources.length} sources available now.</h1>
-                <h2>PLEASE CHOOSE</h2>
+    return (
+        <PageContainer>
+            <HeaderSection>
+                <h1>Journal Dispatch</h1>
+                <p style={{color: 'var(--text-secondary)', marginTop: '0.5rem'}}>
+                    {sources.length} curated sources at your fingertips.
+                </p>
 
-                 <form onSubmit = {getNews}>
+                <Form onSubmit={getNews}>
                     <div className="form-control">
-                        <label>Source</label>
-                        <select onChange = {e => setSource(e.target.value)}>
-                            <option value="nothing">Select an option...</option>
-                            {
-                                sources.map(source => {
-                                    return(
-                                        <option key={source.id} value={source.id}>{source.name}</option>
-                                    )
-                                })
-                            }
+                        <label>Select Publication</label>
+                        <select onChange={e => setSource(e.target.value)} value={source}>
+                            <option value="nothing">Choose a source...</option>
+                            {sources.map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
                         </select>
-                        <label>Relevance</label>
-                        <select onChange={e => setRelevance(e.target.value) }>
-                            <option value="latest">Latest</option>
-                            <option value="top">Top</option>
-                        </select>
-                        <input type="submit" value="Search" />
                     </div>
-                 </form>
+                    <input type="submit" value="Update Feed" />
+                </Form>
+            </HeaderSection>
 
-                    {news}
-
-
-            </section>
-        </React.Fragment>
-    )
+            {articles.length > 0 ? (
+                <Grid>
+                    {articles.map((article, index) => (
+                        <ArticleCard
+                            key={article.title + index}
+                            article={article}
+                            variant={index === 0 ? 'hero' : index < 3 ? 'featured' : 'compact'}
+                        />
+                    ))}
+                </Grid>
+            ) : (
+                <div style={{textAlign: 'center', padding: '4rem 0'}}>
+                    {loading ? (
+                        <Grid>
+                            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+                        </Grid>
+                    ) : (
+                        <p style={{fontSize: '1.25rem', opacity: 0.6}}>Select a source to begin your reading experience.</p>
+                    )}
+                </div>
+            )}
+        </PageContainer>
+    );
 }
 
 export default Main;
