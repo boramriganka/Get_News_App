@@ -1,7 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 
 const Card = styled.div.withConfig({
   shouldForwardProp: (prop) => !['variant'].includes(prop),
@@ -138,16 +140,28 @@ const AuthorInfo = styled.div`
 
 const ArticleCard = ({ article, variant = 'compact' }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const bookmarks = useSelector(state => state.Bookmarks.bookmarks);
+
   if (!article) return null;
 
-  const handleCardClick = () => {
+  const isBookmarked = bookmarks.some(b => b.title === article.title);
+
+  const handleCardClick = (e) => {
+    // If we click the bookmark icon, don't navigate
+    if (e.target.closest('.bookmark-btn')) return;
     navigate(`/article/${encodeURIComponent(article.title)}`, { state: { article } });
+  };
+
+  const toggleBookmark = (e) => {
+    e.stopPropagation();
+    dispatch({ type: 'TOGGLE_BOOKMARK', payload: article });
   };
 
   return (
     <Card variant={variant} onClick={handleCardClick}>
       <ImageWrapper variant={variant}>
-        <Image src={article.urlToImage} alt={article.title} loading="lazy" />
+        <Image src={article.urlToImage || 'https://via.placeholder.com/800x600?text=News+Image'} alt={article.title} loading="lazy" />
       </ImageWrapper>
       <Content variant={variant}>
         <Meta>
@@ -163,7 +177,13 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
           <AuthorInfo>
             By <span>{article.author || 'Editorial Staff'}</span>
           </AuthorInfo>
-          <BookmarkBorderIcon sx={{ fontSize: 20, cursor: 'pointer', opacity: 0.6 }} />
+          <div className="bookmark-btn" onClick={toggleBookmark}>
+            {isBookmarked ? (
+                <BookmarkIcon sx={{ fontSize: 20, cursor: 'pointer', color: ({ theme }) => theme.accent }} />
+            ) : (
+                <BookmarkBorderIcon sx={{ fontSize: 20, cursor: 'pointer', opacity: 0.6 }} />
+            )}
+          </div>
         </Footer>
       </Content>
     </Card>

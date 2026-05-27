@@ -10,7 +10,7 @@ export function fetchCustomNews(source, relevance) {
         if (res.status === 'ok') {
           dispatch({ type: 'FETCH_CUSTOM_NEWS', payload: res.articles });
         } else {
-          console.error('NewsAPI Error:', res.message);
+          console.error('NewsAPI Error (FETCH_CUSTOM_NEWS):', res.message || 'Unknown error');
         }
       })
       .catch((err) => {

@@ -38,6 +38,11 @@ const Form = styled.form`
     flex-direction: column;
     gap: 0.5rem;
     min-width: 200px;
+    flex: 1;
+
+    @media (max-width: 480px) {
+      min-width: 100%;
+    }
   }
 
   label {
@@ -54,6 +59,7 @@ const Form = styled.form`
     background: ${({ theme }) => theme.body};
     color: ${({ theme }) => theme.text};
     font-family: inherit;
+    width: 100%;
   }
 
   input[type="submit"] {
@@ -65,6 +71,11 @@ const Form = styled.form`
     font-weight: 700;
     cursor: pointer;
     transition: opacity 0.2s;
+    height: 48px;
+
+    @media (max-width: 480px) {
+      width: 100%;
+    }
 
     &:hover {
       opacity: 0.9;
@@ -82,19 +93,34 @@ const Main = () => {
 
     useEffect(() => {
         setLoading(true);
+        // Fetch sources
         fetch(`https://newsapi.org/v2/top-headlines/sources?apiKey=${process.env.REACT_APP_KEY_NEWS}`)
             .then(res => res.json())
             .then(response => {
                 if (response.status === 'ok') {
                     setSources(response.sources);
                 }
+            })
+            .catch(err => {
+                console.error('Sources Fetch Error:', err);
+            });
+
+        // Fetch initial top headlines if articles are empty
+        fetch(`https://newsapi.org/v2/top-headlines?country=us&apiKey=${process.env.REACT_APP_KEY_NEWS}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'ok') {
+                    dispatch({ type: 'FETCH_CUSTOM_NEWS', payload: res.articles });
+                } else {
+                    console.error('Initial News Fetch Error:', res.message);
+                }
                 setLoading(false);
             })
             .catch(err => {
-                console.error(err);
+                console.error('Initial News Fetch Error:', err);
                 setLoading(false);
             });
-    }, []);
+    }, [dispatch]);
 
     const getNews = (e) => {
         e.preventDefault();

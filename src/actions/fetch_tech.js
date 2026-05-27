@@ -10,7 +10,7 @@ export function fetchTech() {
         if (res.status === 'ok') {
           dispatch({ type: 'FETCH_TECH', payload: res.articles });
         } else {
-          console.error('NewsAPI Error:', res.message);
+          console.error('NewsAPI Error (FETCH_TECH):', res.message || 'Unknown error');
         }
       })
       .catch((err) => {

@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { Link } from 'react-router-dom';
 
 const ChipsContainer = styled.div`
   display: flex;
@@ -20,7 +21,7 @@ const ChipsContainer = styled.div`
   }
 `;
 
-const Chip = styled.button`
+const Chip = styled(Link)`
   white-space: nowrap;
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -39,7 +40,13 @@ const Chip = styled.button`
 `;
 
 const categories = [
-  'All', 'Latest', 'India', 'World', 'Tech', 'Business', 'Culture', 'Opinion', 'Science', 'Health'
+  { name: 'All', path: '/' },
+  { name: 'Tech', path: '/category/technology' },
+  { name: 'Business', path: '/category/business' },
+  { name: 'Science', path: '/category/science' },
+  { name: 'Health', path: '/category/health' },
+  { name: 'Entertainment', path: '/category/entertainment' },
+  { name: 'Sports', path: '/category/sports' }
 ];
 
 const CategoryTabs = ({ activeCategory, setActiveCategory }) => {
@@ -47,11 +54,12 @@ const CategoryTabs = ({ activeCategory, setActiveCategory }) => {
     <ChipsContainer>
       {categories.map(cat => (
         <Chip
-          key={cat}
-          $active={activeCategory === cat}
-          onClick={() => setActiveCategory && setActiveCategory(cat)}
+          key={cat.name}
+          to={cat.path}
+          $active={activeCategory === cat.name}
+          onClick={() => setActiveCategory && setActiveCategory(cat.name)}
         >
-          {cat}
+          {cat.name}
         </Chip>
       ))}
     </ChipsContainer>
