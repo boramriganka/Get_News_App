@@ -1,35 +1,38 @@
 import React from 'react';
-import { func, string } from 'prop-types';
-import styled from "styled-components";
+import styled from 'styled-components';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
-const Button = styled.button`
-  background: none;
-  border: none;
+const ToggleContainer = styled.button`
+  background: transparent;
+  border: 1px solid ${({ theme }) => theme.border};
   color: ${({ theme }) => theme.text};
+  border-radius: 30px;
   cursor: pointer;
   display: flex;
-  align-items: center;
+  font-size: 0.5rem;
+  justify-content: space-between;
+  margin: 0 auto;
+  overflow: hidden;
   padding: 0.5rem;
-  border-radius: 50%;
-  transition: background 0.2s;
+  position: relative;
+  width: 3rem;
+  height: 1.5rem;
+  align-items: center;
 
-  &:hover {
-    background: ${({ theme }) => theme.border};
+  svg {
+    height: auto;
+    width: 1rem;
+    transition: all 0.3s linear;
   }
 `;
 
-const Toggle = ({theme,  toggleTheme }) => {
+const Toggle = ({theme, toggleTheme}) => {
     return (
-        <Button onClick={toggleTheme} title="Toggle Dark/Light Mode">
-            <Brightness4Icon/>
-        </Button>
+        <ToggleContainer onClick={toggleTheme} >
+            {theme === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+        </ToggleContainer>
     );
 };
-
-Toggle.propTypes = {
-    theme: string.isRequired,
-    toggleTheme: func.isRequired,
-}
 
 export default Toggle;

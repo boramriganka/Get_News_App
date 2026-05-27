@@ -1,21 +1,20 @@
 const api = process.env.REACT_APP_KEY_NEWS;
 
-export function fetchTech(){
-    //return the actual action to do
-        return function(dispatch){
-            fetch(`https://newsapi.org/v1/articles?source=the-verge&sortBy=top&apiKey=${api}`)
-            .then(res => {
-                return res.json();
-                
-            })
-            .then(res => {
-             // console.log(res)
-              dispatch({type:"FETCH_TECH", payload: res.articles});
-            })
-            .catch(err => {
-                console.log(err);
-            })
-      
-         }
-      
+export function fetchTech() {
+  return function (dispatch) {
+    // NewsAPI v2: using everything or top-headlines
+    const url = `https://newsapi.org/v2/top-headlines?sources=the-verge,techcrunch,wired&apiKey=${api}`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 'ok') {
+          dispatch({ type: 'FETCH_TECH', payload: res.articles });
+        } else {
+          console.error('NewsAPI Error:', res.message);
+        }
+      })
+      .catch((err) => {
+        console.error('Fetch Error:', err);
+      });
+  };
 }

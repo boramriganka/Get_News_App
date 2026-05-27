@@ -3,7 +3,9 @@ import styled from 'styled-components';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import { useNavigate } from 'react-router-dom';
 
-const Card = styled.div`
+const Card = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['variant'].includes(prop),
+})`
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -49,7 +51,9 @@ const Card = styled.div`
   `}
 `;
 
-const ImageWrapper = styled.div`
+const ImageWrapper = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['variant'].includes(prop),
+})`
   overflow: hidden;
   position: relative;
   border-radius: 4px;
@@ -69,7 +73,9 @@ const Image = styled.img`
   transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1);
 `;
 
-const Content = styled.div`
+const Content = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['variant'].includes(prop),
+})`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -90,7 +96,9 @@ const Meta = styled.div`
   color: ${({ theme }) => theme.accent};
 `;
 
-const Headline = styled.h2`
+const Headline = styled.h2.withConfig({
+  shouldForwardProp: (prop) => !['variant'].includes(prop),
+})`
   font-size: ${({ variant }) => variant === 'hero' ? '3rem' : variant === 'featured' ? '1.75rem' : '1.25rem'};
   color: ${({ theme }) => theme.text};
   margin: 0;
@@ -100,7 +108,9 @@ const Headline = styled.h2`
   }
 `;
 
-const Summary = styled.p`
+const Summary = styled.p.withConfig({
+  shouldForwardProp: (prop) => !['variant'].includes(prop),
+})`
   font-size: ${({ variant }) => variant === 'hero' ? '1.1rem' : '0.9rem'};
   color: ${({ theme }) => theme.textSecondary};
   display: -webkit-box;
