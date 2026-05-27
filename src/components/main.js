@@ -72,6 +72,8 @@ const Form = styled.form`
     cursor: pointer;
     transition: opacity 0.2s;
     height: 48px;
+    white-space: nowrap;
+    min-width: fit-content;
 
     @media (max-width: 480px) {
       width: 100%;

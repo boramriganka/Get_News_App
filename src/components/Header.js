@@ -65,14 +65,15 @@ const SearchContainer = styled.div`
   align-items: center;
   background: ${({ theme }) => theme.border};
   border-radius: 20px;
-  padding: 0.25rem 0.75rem;
+  padding: 0 0.5rem;
   margin-right: 0.5rem;
   transition: all 0.3s ease;
-  width: ${({ $expanded }) => $expanded ? '200px' : '40px'};
+  width: ${({ $expanded }) => $expanded ? '200px' : '36px'};
+  height: 36px;
   overflow: hidden;
 
   @media (max-width: 480px) {
-     width: ${({ $expanded }) => $expanded ? '140px' : '40px'};
+     width: ${({ $expanded }) => $expanded ? '160px' : '36px'};
   }
 `;
 
@@ -99,9 +100,11 @@ const IconButton = styled.button`
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0.5rem;
   border-radius: 50%;
   transition: background 0.2s;
+  flex-shrink: 0;
 
   &:hover {
     background: ${({ theme }) => theme.border};
