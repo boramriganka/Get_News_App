@@ -1,8 +1,7 @@
-export function fetchCustomNews(source, relevance) {
+export function fetchCustomNews(source) {
   return function (dispatch) {
-    // NewsAPI v2: use top-headlines for sources
     const url = `/api/news?endpoint=top-headlines&sources=${source}`;
-    fetch(url)
+    return fetch(url)
       .then((res) => res.json())
       .then((res) => {
         if (res.status === 'ok') {

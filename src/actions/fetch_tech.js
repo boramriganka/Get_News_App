@@ -2,7 +2,7 @@ export function fetchTech() {
   return function (dispatch) {
     // NewsAPI v2: using everything or top-headlines
     const url = `/api/news?endpoint=top-headlines&sources=the-verge,techcrunch,wired`;
-    fetch(url)
+    return fetch(url)
       .then((res) => res.json())
       .then((res) => {
         if (res.status === 'ok') {
