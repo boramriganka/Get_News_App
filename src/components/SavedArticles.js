@@ -2,22 +2,30 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 import ArticleCard from './ArticleCard';
+import EmptyState from './EmptyState';
 
 const PageContainer = styled.div`
   padding: 2rem 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+`;
+
+const SectionHeader = styled.div`
+  margin-bottom: 3rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid ${({ theme }) => theme.text};
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 3rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid ${({ theme }) => theme.text};
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  color: ${({ theme }) => theme.text};
+  line-height: 1;
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 2rem;
+  gap: 2.5rem 2rem;
 
   @media (max-width: 768px) {
     display: flex;
@@ -30,21 +38,24 @@ const SavedArticles = () => {
 
     return (
         <PageContainer>
-            <SectionTitle>Saved Articles</SectionTitle>
+            <SectionHeader>
+                <SectionTitle>Saved Articles</SectionTitle>
+            </SectionHeader>
             {bookmarks.length > 0 ? (
                 <Grid>
                     {bookmarks.map((article, index) => (
                         <ArticleCard
-                            key={article.title + index}
+                            key={(article.url || article.title) + index}
                             article={article}
                             variant={index === 0 ? 'hero' : index < 3 ? 'featured' : 'compact'}
                         />
                     ))}
                 </Grid>
             ) : (
-                <div style={{textAlign: 'center', padding: '4rem 0'}}>
-                    <p style={{fontSize: '1.25rem', opacity: 0.6}}>You haven't saved any articles yet.</p>
-                </div>
+                <EmptyState
+                  title="No saved stories"
+                  message="Bookmark articles to read them later. Your saved stories will appear here."
+                />
             )}
         </PageContainer>
     );

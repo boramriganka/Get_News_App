@@ -1,7 +1,7 @@
 export function fetchCategoryNews(category) {
   return function (dispatch) {
     const url = `/api/news?endpoint=top-headlines&category=${category}`;
-    fetch(url)
+    return fetch(url)
       .then((res) => res.json())
       .then((res) => {
         if (res.status === 'ok') {

@@ -1,44 +1,83 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import ShareIcon from '@mui/icons-material/Share';
+import ImageWithFallback from './ImageWithFallback';
 
-const DetailContainer = styled.article`
-  max-width: 800px;
+const DetailContainer = styled.div`
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 4rem 1.5rem;
+  padding: 0 1.5rem;
 `;
 
-const BackButton = styled.button`
-  background: none;
-  border: none;
+const BackNav = styled.div`
+  padding: 2rem 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  color: ${({ theme }) => theme.textSecondary};
+`;
+
+const IconButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => !['$active'].includes(prop),
+})`
+  background: none;
+  border: 1px solid ${({ theme }) => theme.border};
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.text};
   cursor: pointer;
-  margin-bottom: 3rem;
-  padding: 0;
+  transition: all 0.2s;
+
+  ${({ theme, $active }) => $active && `
+    background: ${theme.accent};
+    color: white;
+    border-color: ${theme.accent};
+  `}
 
   &:hover {
-    color: ${({ theme }) => theme.text};
+    background: ${({ theme, $active }) => $active ? theme.accent : theme.text};
+    color: ${({ theme, $active }) => $active ? 'white' : theme.body};
+    border-color: ${({ theme, $active }) => $active ? theme.accent : theme.text};
+    opacity: ${({ $active }) => $active ? 0.9 : 1};
   }
 `;
 
-const Header = styled.header`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 3rem;
+const BackText = styled.button`
+  background: none;
+  border: none;
+  margin-left: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: ${({ theme }) => theme.text};
+  cursor: pointer;
+  padding: 0.5rem;
+
+  &:hover {
+    opacity: 0.7;
+  }
 `;
 
-const Category = styled.span`
+const ArticleHeader = styled.header`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin: 2rem 0 4rem;
+  max-width: 1000px;
+`;
+
+const MetaTop = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   color: ${({ theme }) => theme.accent};
   font-weight: 800;
   text-transform: uppercase;
@@ -47,67 +86,85 @@ const Category = styled.span`
 `;
 
 const Title = styled.h1`
-  font-size: 4rem;
-  line-height: 1;
-  @media (max-width: 768px) {
-    font-size: 2.5rem;
-  }
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  line-height: 1.1;
+  font-weight: 900;
+  margin: 0;
 `;
 
-const Subtitle = styled.p`
-  font-size: 1.5rem;
+const Description = styled.p`
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
   font-family: var(--font-serif);
   line-height: 1.4;
   color: ${({ theme }) => theme.textSecondary};
   font-style: italic;
+  max-width: 800px;
 `;
 
-const Meta = styled.div`
+const MetaBar = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 0;
+  padding: 2rem 0;
   border-top: 1px solid ${({ theme }) => theme.border};
   border-bottom: 1px solid ${({ theme }) => theme.border};
-  margin-bottom: 3rem;
+  margin-bottom: 4rem;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
 `;
 
 const AuthorBlock = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.9rem;
+  gap: 0.5rem;
 
   .name {
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: ${({ theme }) => theme.text};
+    span {
+        font-weight: 400;
+        color: ${({ theme }) => theme.textSecondary};
+    }
   }
   .date {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
     opacity: 0.6;
+    color: ${({ theme }) => theme.text};
   }
 `;
 
-const Actions = styled.div`
+const ActionGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
 `;
 
-const HeroImage = styled.img`
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
+const HeroSection = styled.div`
+  margin: 0 -1.5rem 4rem;
   height: 70vh;
-  object-fit: cover;
-  margin-bottom: 4rem;
+  min-height: 400px;
+  max-height: 800px;
 
   @media (max-width: 768px) {
-    height: 40vh;
+    height: 50vh;
+    min-height: 300px;
   }
 `;
 
-const Content = styled.div`
+const MainContent = styled.div`
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 6rem;
+`;
+
+const BodyText = styled.div`
   font-size: 1.25rem;
   line-height: 1.8;
   color: ${({ theme }) => theme.text};
@@ -116,71 +173,141 @@ const Content = styled.div`
     margin-bottom: 2rem;
   }
 
-  blockquote {
-    font-family: var(--font-serif);
-    font-size: 2rem;
-    line-height: 1.3;
-    font-style: italic;
-    border-left: 4px solid ${({ theme }) => theme.accent};
-    padding-left: 2rem;
-    margin: 3rem 0;
-    color: ${({ theme }) => theme.text};
+  .summary-label {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: ${({ theme }) => theme.accent}11;
+    color: ${({ theme }) => theme.accent};
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const ExternalLink = styled.a`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding: 1.25rem 2.5rem;
+  background: ${({ theme }) => theme.text};
+  color: ${({ theme }) => theme.body};
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
   }
 `;
 
 const ArticleDetail = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const bookmarks = useSelector(state => state.Bookmarks.bookmarks);
   const article = state?.article;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (!article) {
     return (
       <DetailContainer>
-        <BackButton onClick={() => navigate(-1)}>
-          <ArrowBackIcon sx={{ fontSize: 16 }} /> Back to Home
-        </BackButton>
-        <h1>Article not found</h1>
+        <BackNav>
+          <IconButton onClick={() => navigate(-1)}>
+            <ArrowBackIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </BackNav>
+        <ArticleHeader>
+           <Title>Story not found</Title>
+           <Description>We couldn't locate the article you're looking for.</Description>
+        </ArticleHeader>
       </DetailContainer>
     );
   }
 
+  const isBookmarked = bookmarks.some(b => b.title === article.title);
+
+  // Clean the content of raw API markers like [+5803 chars]
+  const cleanContent = (text) => {
+    if (!text) return '';
+    return text.replace(/\[\+\d+ chars\]/g, '').trim();
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Oct 24, 2026';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+  };
+
   return (
     <DetailContainer>
-      <BackButton onClick={() => navigate(-1)}>
-        <ArrowBackIcon sx={{ fontSize: 16 }} /> Back to Home
-      </BackButton>
+      <BackNav>
+        <IconButton onClick={() => navigate(-1)}>
+          <ArrowBackIcon sx={{ fontSize: 20 }} />
+        </IconButton>
+        <BackText onClick={() => navigate(-1)}>Back to stories</BackText>
+      </BackNav>
 
-      <Header>
-        <Category>{article.source?.name || 'Top Stories'}</Category>
+      <ArticleHeader>
+        <MetaTop>
+          <span>{article.source?.name || 'Top Stories'}</span>
+          <span style={{opacity: 0.3}}>|</span>
+          <span>5 min read</span>
+        </MetaTop>
         <Title>{article.title}</Title>
-        <Subtitle>{article.description}</Subtitle>
-      </Header>
+        {article.description && <Description>{article.description}</Description>}
+      </ArticleHeader>
 
-      <Meta>
+      <MetaBar>
         <AuthorBlock>
-          <span className="name">By {article.author || 'Editorial Staff'}</span>
-          <span className="date">Published Oct 24, 2026 • 6 min read</span>
+          <div className="name"><span>By</span> {article.author || 'Editorial Staff'}</div>
+          <div className="date">{formatDate(article.publishedAt)}</div>
         </AuthorBlock>
-        <Actions>
-          <ShareIcon sx={{ cursor: 'pointer', opacity: 0.7 }} />
-          <BookmarkBorderIcon sx={{ cursor: 'pointer', opacity: 0.7 }} />
-        </Actions>
-      </Meta>
+        <ActionGroup>
+          <IconButton onClick={() => {
+            if (navigator.share) {
+                navigator.share({ title: article.title, url: article.url });
+            }
+          }} aria-label="Share story">
+            <ShareIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <IconButton
+            onClick={() => dispatch({ type: 'TOGGLE_BOOKMARK', payload: article })}
+            aria-label={isBookmarked ? "Remove bookmark" : "Save story"}
+            $active={isBookmarked}
+          >
+            {isBookmarked ? <BookmarkIcon sx={{ fontSize: 20 }} /> : <BookmarkBorderIcon sx={{ fontSize: 20 }} />}
+          </IconButton>
+        </ActionGroup>
+      </MetaBar>
 
-      <HeroImage src={article.urlToImage} alt={article.title} />
+      <HeroSection>
+        <ImageWithFallback src={article.urlToImage} alt={article.title} />
+      </HeroSection>
 
-      <Content>
-        <p>{article.content || article.description}</p>
-        <blockquote>
-          "In the world of fast news, the journal experience brings back the depth and rhythm of quality storytelling."
-        </blockquote>
-        <p>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-        </p>
-        <p>
-          Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.
-        </p>
-      </Content>
+      <MainContent>
+        <BodyText>
+          <span className="summary-label">Story Summary</span>
+          <p>{cleanContent(article.content) || article.description}</p>
+          <ExternalLink href={article.url} target="_blank" rel="noopener noreferrer">
+            Read full story at {article.source?.name || 'source'}
+          </ExternalLink>
+        </BodyText>
+      </MainContent>
     </DetailContainer>
   );
 };

@@ -1,76 +1,104 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { searchNews } from '../actions/search_actions';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { searchNews } from '../actions/search_actions';
 import ArticleCard from './ArticleCard';
 import SkeletonCard from './SkeletonCard';
 
 const PageContainer = styled.div`
   padding: 2rem 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
 `;
 
-const SectionTitle = styled.h2`
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid ${({ theme }) => theme.text};
+const SearchHeader = styled.div`
+  margin-bottom: 4rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+`;
+
+const QueryTitle = styled.h1`
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  line-height: 1.1;
+  margin: 0;
 
   span {
-      font-weight: 400;
-      opacity: 0.6;
-      font-style: italic;
+    color: ${({ theme }) => theme.accent};
+    font-style: italic;
   }
+`;
+
+const ResultCount = styled.p`
+  color: ${({ theme }) => theme.textSecondary};
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 2rem;
+  gap: 3rem 2rem;
 
   @media (max-width: 768px) {
     display: flex;
     flex-direction: column;
+    gap: 2.5rem;
   }
 `;
 
 const SearchResults = () => {
-    const location = useLocation();
-    const query = new URLSearchParams(location.search).get('q');
+    const [searchParams] = useSearchParams();
+    const query = searchParams.get('q');
     const dispatch = useDispatch();
-    const { searchResults, loading, error } = useSelector(state => state.Search);
+    const [loading, setLoading] = useState(true);
+    const searchResults = useSelector(state => state.Search.searchNews);
 
     useEffect(() => {
         if (query) {
-            dispatch(searchNews(query));
+            const performSearch = async () => {
+                setLoading(true);
+                await dispatch(searchNews(query));
+                setLoading(false);
+                window.scrollTo(0, 0);
+            };
+            performSearch();
         }
     }, [query, dispatch]);
 
     return (
         <PageContainer>
-            <SectionTitle>Search Results <span>"{query}"</span></SectionTitle>
+            <SearchHeader>
+                <QueryTitle>Search Results for <span>"{query}"</span></QueryTitle>
+                {!loading && (
+                    <ResultCount>
+                        Found {searchResults.length} relevant articles.
+                    </ResultCount>
+                )}
+            </SearchHeader>
 
             {loading ? (
                 <Grid>
-                    {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+                    {[...Array(6)].map((_, i) => (
+                        <SkeletonCard key={i} />
+                    ))}
                 </Grid>
-            ) : error ? (
-                <div style={{textAlign: 'center', padding: '4rem 0'}}>
-                    <p style={{color: 'red'}}>{error}</p>
-                </div>
             ) : searchResults.length > 0 ? (
                 <Grid>
                     {searchResults.map((article, index) => (
                         <ArticleCard
-                            key={article.title + index}
+                            key={(article.url || article.title) + index}
                             article={article}
-                            variant={index === 0 ? 'hero' : index < 3 ? 'featured' : 'compact'}
+                            variant="compact"
                         />
                     ))}
                 </Grid>
             ) : (
-                <div style={{textAlign: 'center', padding: '4rem 0'}}>
-                    <p style={{fontSize: '1.25rem', opacity: 0.6}}>No results found for your search.</p>
+                <div style={{textAlign: 'center', padding: '6rem 0'}}>
+                    <p style={{fontSize: '1.5rem', opacity: 0.4, fontStyle: 'italic', fontFamily: 'var(--font-serif)'}}>
+                        No results found for your search.
+                    </p>
                 </div>
             )}
         </PageContainer>

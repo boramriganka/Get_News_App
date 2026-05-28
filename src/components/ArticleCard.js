@@ -4,32 +4,33 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import ImageWithFallback from './ImageWithFallback';
 
 const Card = styled.div.withConfig({
   shouldForwardProp: (prop) => !['variant'].includes(prop),
 })`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   padding-bottom: 2rem;
   border-bottom: 1px solid ${({ theme }) => theme.border};
   height: 100%;
-  transition: transform 0.3s ease;
   cursor: pointer;
+  background: transparent;
 
-  &:hover img {
-    transform: scale(1.05);
+  &:hover .card-image {
+    transform: scale(1.03);
   }
 
   ${({ variant }) => variant === 'hero' && `
     grid-column: span 12;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: 2.5rem;
-    align-items: center;
-    border-bottom: 2px solid #000;
-    padding-bottom: 3rem;
-    margin-bottom: 2rem;
+    gap: 3rem;
+    align-items: flex-start;
+    border-bottom: 2px solid ${({ theme }) => theme.text};
+    padding-bottom: 3.5rem;
+    margin-bottom: 1.5rem;
 
     @media (max-width: 968px) {
       display: flex;
@@ -47,32 +48,35 @@ const Card = styled.div.withConfig({
 
   ${({ variant }) => variant === 'compact' && `
     grid-column: span 3;
+    @media (max-width: 1024px) {
+      grid-column: span 4;
+    }
     @media (max-width: 768px) {
       grid-column: span 12;
     }
   `}
 `;
 
-const ImageWrapper = styled.div.withConfig({
+const ImageContainer = styled.div.withConfig({
   shouldForwardProp: (prop) => !['variant'].includes(prop),
 })`
   overflow: hidden;
   position: relative;
-  border-radius: 4px;
-  aspect-ratio: 16 / 9;
-  background: ${({ theme }) => theme.border};
+  border-radius: 2px;
+  aspect-ratio: 16 / 10;
+  background: ${({ theme }) => theme.border}22;
+
+  .card-image {
+     transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
 
   ${({ variant }) => variant === 'hero' && `
-    grid-column: span 7;
-    aspect-ratio: 4 / 3;
+    grid-column: span 8;
+    aspect-ratio: 3 / 2;
+    @media (max-width: 1280px) {
+        aspect-ratio: 16 / 9;
+    }
   `}
-`;
-
-const Image = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1);
 `;
 
 const Content = styled.div.withConfig({
@@ -80,10 +84,11 @@ const Content = styled.div.withConfig({
 })`
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 
   ${({ variant }) => variant === 'hero' && `
-    grid-column: span 5;
+    grid-column: span 4;
+    padding-top: 0.5rem;
   `}
 `;
 
@@ -92,18 +97,34 @@ const Meta = styled.div`
   align-items: center;
   gap: 0.75rem;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   color: ${({ theme }) => theme.accent};
+
+  span.dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: ${({ theme }) => theme.textSecondary};
+    opacity: 0.4;
+  }
 `;
 
 const Headline = styled.h2.withConfig({
   shouldForwardProp: (prop) => !['variant'].includes(prop),
 })`
-  font-size: ${({ variant }) => variant === 'hero' ? '3rem' : variant === 'featured' ? '1.75rem' : '1.25rem'};
+  font-size: ${({ variant }) =>
+    variant === 'hero' ? 'clamp(2.5rem, 4vw, 3.5rem)' :
+    variant === 'featured' ? '1.75rem' : '1.35rem'};
   color: ${({ theme }) => theme.text};
   margin: 0;
+  line-height: 1.1;
+  font-weight: 900;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 
   @media (max-width: 768px) {
     font-size: ${({ variant }) => variant === 'hero' ? '2.25rem' : '1.25rem'};
@@ -113,10 +134,11 @@ const Headline = styled.h2.withConfig({
 const Summary = styled.p.withConfig({
   shouldForwardProp: (prop) => !['variant'].includes(prop),
 })`
-  font-size: ${({ variant }) => variant === 'hero' ? '1.1rem' : '0.9rem'};
+  font-size: ${({ variant }) => variant === 'hero' ? '1.15rem' : '0.95rem'};
   color: ${({ theme }) => theme.textSecondary};
+  line-height: 1.6;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: ${({ variant }) => variant === 'hero' ? '4' : '3'};
   -webkit-box-orient: vertical;
   overflow: hidden;
 `;
@@ -132,9 +154,34 @@ const Footer = styled.div`
 const AuthorInfo = styled.div`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.textSecondary};
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 1rem;
+
   span {
     font-weight: 700;
     color: ${({ theme }) => theme.text};
+  }
+`;
+
+const BookmarkBtn = styled.button`
+  background: none;
+  border: none;
+  padding: 8px;
+  margin: -8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme, $isBookmarked }) => $isBookmarked ? theme.accent : theme.textSecondary};
+  opacity: ${({ $isBookmarked }) => $isBookmarked ? 1 : 0.6};
+  transition: all 0.2s;
+
+  &:hover {
+    opacity: 1;
+    color: ${({ theme }) => theme.accent};
   }
 `;
 
@@ -148,8 +195,7 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
   const isBookmarked = bookmarks.some(b => b.title === article.title);
 
   const handleCardClick = (e) => {
-    // If we click the bookmark icon, don't navigate
-    if (e.target.closest('.bookmark-btn')) return;
+    if (e.target.closest('.no-nav')) return;
     navigate(`/article/${encodeURIComponent(article.title)}`, { state: { article } });
   };
 
@@ -160,13 +206,17 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
 
   return (
     <Card variant={variant} onClick={handleCardClick}>
-      <ImageWrapper variant={variant}>
-        <Image src={article.urlToImage || 'https://via.placeholder.com/800x600?text=News+Image'} alt={article.title} loading="lazy" />
-      </ImageWrapper>
+      <ImageContainer variant={variant}>
+        <ImageWithFallback
+          src={article.urlToImage}
+          alt={article.title}
+          className="card-image"
+        />
+      </ImageContainer>
       <Content variant={variant}>
         <Meta>
           <span>{article.source?.name || 'News'}</span>
-          <span>•</span>
+          <span className="dot" />
           <span>5 min read</span>
         </Meta>
         <Headline variant={variant}>{article.title}</Headline>
@@ -177,13 +227,18 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
           <AuthorInfo>
             By <span>{article.author || 'Editorial Staff'}</span>
           </AuthorInfo>
-          <div className="bookmark-btn" onClick={toggleBookmark}>
+          <BookmarkBtn
+            className="no-nav"
+            onClick={toggleBookmark}
+            $isBookmarked={isBookmarked}
+            aria-label={isBookmarked ? "Remove bookmark" : "Save article"}
+          >
             {isBookmarked ? (
-                <BookmarkIcon sx={{ fontSize: 20, cursor: 'pointer', color: ({ theme }) => theme.accent }} />
+                <BookmarkIcon sx={{ fontSize: 22 }} />
             ) : (
-                <BookmarkBorderIcon sx={{ fontSize: 20, cursor: 'pointer', opacity: 0.6 }} />
+                <BookmarkBorderIcon sx={{ fontSize: 22 }} />
             )}
-          </div>
+          </BookmarkBtn>
         </Footer>
       </Content>
     </Card>
