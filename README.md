@@ -1,4 +1,4 @@
-
+https://journalofficial.vercel.app/
 
 # Get News App
 
