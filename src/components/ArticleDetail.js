@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import styled from 'styled-components';
+import React, { useEffect, useState, useCallback } from 'react';
+import styled, { keyframes } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -7,6 +7,8 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import ShareIcon from '@mui/icons-material/Share';
 import ImageWithFallback from './ImageWithFallback';
+import { BIAS_MAP } from '../data/sourceBias';
+import ArticleCard from './ArticleCard';
 
 const DetailContainer = styled.div`
   max-width: 1280px;
@@ -164,6 +166,91 @@ const MainContent = styled.div`
   padding-bottom: 6rem;
 `;
 
+const pulse = keyframes`
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+`;
+
+const SummariseBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: 1px solid ${({ theme }) => theme.border};
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: ${({ theme }) => theme.text};
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 2rem;
+
+  &:hover {
+    background: ${({ theme }) => theme.border}44;
+  }
+
+  ${({ $loading }) => $loading && `
+    animation: ${pulse} 1.5s ease-in-out infinite;
+    cursor: wait;
+  `}
+`;
+
+const SummaryBox = styled.div`
+  background: #FFF8E7;
+  border-left: 3px solid #F5A623;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #333;
+
+  ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  li {
+    margin-bottom: 0.5rem;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+`;
+
+const ErrorText = styled.span`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.textSecondary};
+  margin-left: 1rem;
+  font-weight: 500;
+`;
+
+const PerspectiveSection = styled.div`
+  margin-top: 6rem;
+  padding-top: 4rem;
+  border-top: 1px solid ${({ theme }) => theme.border};
+`;
+
+const SectionHeading = styled.h3`
+  font-size: 2rem;
+  font-weight: 900;
+  margin-bottom: 3rem;
+`;
+
+const PerspectiveGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
 const BodyText = styled.div`
   font-size: 1.25rem;
   line-height: 1.8;
@@ -213,11 +300,81 @@ const ArticleDetail = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const bookmarks = useSelector(state => state.Bookmarks.bookmarks);
+  const allArticles = useSelector(state => [
+    ...state.FetchTech.techNews,
+    ...state.CustomSearch.customNews,
+    ...state.CategoryNews.categoryNews,
+    ...state.Search.news
+  ]);
   const article = state?.article;
+
+  const [summaryStatus, setSummaryStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [summaryText, setSummaryText] = useState('');
+  const [showSummary, setShowSummary] = useState(false);
+  const [isSummariseAvailable, setIsSummariseAvailable] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    // Check if summarisation is available (graceful degradation)
+    // We do a HEAD request or a dummy fetch to check the endpoint
+    fetch('/api/summarise', { method: 'POST', body: JSON.stringify({}) })
+      .then(res => {
+        if (res.status === 405) {
+          // If it returns 405, it might be due to missing API key or wrong method.
+          // The server returns 405 if ANTHROPIC_API_KEY is missing.
+          res.json().then(data => {
+            if (data.error === 'Summarisation unconfigured') {
+              setIsSummariseAvailable(false);
+            }
+          });
+        }
+      })
+      .catch(() => {
+        // Ignore errors, assume available if we can't reach it
+      });
   }, []);
+
+  const cleanArticleContent = useCallback((text) => {
+    if (!text) return '';
+    return text.replace(/\[\+\d+ chars?\]/g, '').trim().substring(0, 1500);
+  }, []);
+
+  const handleSummarise = async () => {
+    if (summaryStatus === 'success') {
+      setShowSummary(!showSummary);
+      return;
+    }
+
+    setSummaryStatus('loading');
+    try {
+      const response = await fetch('/api/summarise', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: article.title,
+          description: article.description,
+          content: article.content,
+          url: article.url
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSummaryText(data.summary);
+        setSummaryStatus('success');
+        setShowSummary(true);
+      } else {
+        setSummaryStatus('error');
+      }
+    } catch (error) {
+      console.error('Summarisation fetch error:', error);
+      setSummaryStatus('error');
+    }
+  };
 
   if (!article) {
     return (
@@ -236,12 +393,6 @@ const ArticleDetail = () => {
   }
 
   const isBookmarked = bookmarks.some(b => b.title === article.title);
-
-  // Clean the content of raw API markers like [+5803 chars]
-  const cleanContent = (text) => {
-    if (!text) return '';
-    return text.replace(/\[\+\d+ chars\]/g, '').trim();
-  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Oct 24, 2026';
@@ -300,13 +451,95 @@ const ArticleDetail = () => {
       </HeroSection>
 
       <MainContent>
+        {isSummariseAvailable && (
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <SummariseBtn
+              onClick={handleSummarise}
+              disabled={summaryStatus === 'loading'}
+              $loading={summaryStatus === 'loading'}
+            >
+              <span>✦</span>
+              {summaryStatus === 'loading' ? 'Summarising…' :
+               summaryStatus === 'success' ? (showSummary ? 'Hide summary' : 'Read in 30 sec') :
+               'Read in 30 sec'}
+            </SummariseBtn>
+            {summaryStatus === 'error' && <ErrorText>Summary unavailable</ErrorText>}
+          </div>
+        )}
+
+        {showSummary && summaryStatus === 'success' && (
+          <SummaryBox>
+            <ul>
+              {summaryText
+                .split('\n')
+                .filter(line => line.trim())
+                .map(line => {
+                  const cleaned = line.trim();
+                  if (cleaned.startsWith('•') || cleaned.startsWith('-') || cleaned.startsWith('*')) {
+                    return cleaned.substring(1).trim();
+                  }
+                  return cleaned;
+                })
+                .map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))
+              }
+            </ul>
+          </SummaryBox>
+        )}
+
         <BodyText>
           <span className="summary-label">Story Summary</span>
-          <p>{cleanContent(article.content) || article.description}</p>
+          <p>{cleanArticleContent(article.content) || article.description}</p>
           <ExternalLink href={article.url} target="_blank" rel="noopener noreferrer">
             Read full story at {article.source?.name || 'source'}
           </ExternalLink>
         </BodyText>
+
+        {(() => {
+          if (!article || !allArticles.length) return null;
+
+          const stopwords = new Set(['the', 'and', 'a', 'to', 'of', 'in', 'is', 'it', 'on', 'that', 'with', 'for', 'was', 'at', 'by', 'as', 'an', 'be', 'this', 'from']);
+          const getKeywords = (title) => {
+            return title
+              .toLowerCase()
+              .replace(/[^\w\s]/g, '')
+              .split(/\s+/)
+              .filter(word => word.length > 2 && !stopwords.has(word))
+              .slice(0, 5);
+          };
+
+          const currentKeywords = getKeywords(article.title);
+          const currentSourceId = article.source?.id || article.source?.name?.toLowerCase().replace(/\s+/g, '-');
+          const currentBias = BIAS_MAP[currentSourceId]?.label;
+
+          const perspectives = allArticles
+            .filter(a => a.url !== article.url) // Not the current article
+            .filter((a, index, self) => self.findIndex(t => t.url === a.url) === index) // Unique by URL
+            .filter(a => {
+              const otherSourceId = a.source?.id || a.source?.name?.toLowerCase().replace(/\s+/g, '-');
+              const otherBias = BIAS_MAP[otherSourceId]?.label;
+              if (!otherBias || otherBias === currentBias) return false;
+
+              const otherKeywords = new Set(getKeywords(a.title));
+              const intersection = currentKeywords.filter(k => otherKeywords.has(k));
+              return intersection.length >= 2;
+            })
+            .slice(0, 4);
+
+          if (perspectives.length < 2) return null;
+
+          return (
+            <PerspectiveSection>
+              <SectionHeading>More perspectives on this story</SectionHeading>
+              <PerspectiveGrid>
+                {perspectives.map((p, i) => (
+                  <ArticleCard key={p.url + i} article={p} variant="compact" />
+                ))}
+              </PerspectiveGrid>
+            </PerspectiveSection>
+          );
+        })()}
       </MainContent>
     </DetailContainer>
   );

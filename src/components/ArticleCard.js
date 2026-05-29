@@ -5,6 +5,10 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ImageWithFallback from './ImageWithFallback';
+import { estimateReadingTime } from '../utils/readingTime';
+import { addToQueue, removeFromQueue } from '../store/readQueueSlice';
+import Tooltip from '@mui/material/Tooltip';
+import BiasLabel from './BiasLabel';
 
 const Card = styled.div.withConfig({
   shouldForwardProp: (prop) => !['variant'].includes(prop),
@@ -166,6 +170,12 @@ const AuthorInfo = styled.div`
   }
 `;
 
+const ReadingTime = styled.span`
+  font-size: 12px;
+  color: #888;
+  margin-right: auto;
+`;
+
 const BookmarkBtn = styled.button`
   background: none;
   border: none;
@@ -189,10 +199,15 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const bookmarks = useSelector(state => state.Bookmarks.bookmarks);
+  const queueItems = useSelector(state => state.ReadQueue.items);
 
   if (!article) return null;
 
   const isBookmarked = bookmarks.some(b => b.title === article.title);
+  const isInQueue = queueItems.some(item => item.url === article.url);
+
+  const readingTime = estimateReadingTime((article.description || '') + (article.content || ''));
+  const sourceId = article.source?.id || article.source?.name?.toLowerCase().replace(/\s+/g, '-');
 
   const handleCardClick = (e) => {
     if (e.target.closest('.no-nav')) return;
@@ -202,6 +217,15 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
   const toggleBookmark = (e) => {
     e.stopPropagation();
     dispatch({ type: 'TOGGLE_BOOKMARK', payload: article });
+  };
+
+  const toggleQueue = (e) => {
+    e.stopPropagation();
+    if (isInQueue) {
+      dispatch(removeFromQueue(article.url));
+    } else {
+      dispatch(addToQueue(article));
+    }
   };
 
   return (
@@ -216,8 +240,9 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
       <Content variant={variant}>
         <Meta>
           <span>{article.source?.name || 'News'}</span>
+          <BiasLabel sourceId={sourceId} />
           <span className="dot" />
-          <span>5 min read</span>
+          <span>{readingTime} min read</span>
         </Meta>
         <Headline variant={variant}>{article.title}</Headline>
         {(variant === 'hero' || variant === 'featured') && (
@@ -227,18 +252,37 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
           <AuthorInfo>
             By <span>{article.author || 'Editorial Staff'}</span>
           </AuthorInfo>
-          <BookmarkBtn
-            className="no-nav"
-            onClick={toggleBookmark}
-            $isBookmarked={isBookmarked}
-            aria-label={isBookmarked ? "Remove bookmark" : "Save article"}
-          >
-            {isBookmarked ? (
-                <BookmarkIcon sx={{ fontSize: 22 }} />
-            ) : (
-                <BookmarkBorderIcon sx={{ fontSize: 22 }} />
-            )}
-          </BookmarkBtn>
+          <ReadingTime>{readingTime} min read</ReadingTime>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <Tooltip title={isInQueue ? "Remove from queue" : "Read later"}>
+              <BookmarkBtn
+                className="no-nav"
+                onClick={toggleQueue}
+                $isBookmarked={isInQueue}
+                aria-label={isInQueue ? "Remove from queue" : "Read later"}
+              >
+                {isInQueue ? (
+                    <BookmarkIcon sx={{ fontSize: 22 }} />
+                ) : (
+                    <BookmarkBorderIcon sx={{ fontSize: 22 }} />
+                )}
+              </BookmarkBtn>
+            </Tooltip>
+            <Tooltip title={isBookmarked ? "Remove bookmark" : "Save article"}>
+              <BookmarkBtn
+                className="no-nav"
+                onClick={toggleBookmark}
+                $isBookmarked={isBookmarked}
+                aria-label={isBookmarked ? "Remove bookmark" : "Save article"}
+              >
+                {isBookmarked ? (
+                    <BookmarkIcon sx={{ fontSize: 22 }} />
+                ) : (
+                    <BookmarkBorderIcon sx={{ fontSize: 22 }} />
+                )}
+              </BookmarkBtn>
+            </Tooltip>
+          </div>
         </Footer>
       </Content>
     </Card>
