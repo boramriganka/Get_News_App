@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -194,7 +194,7 @@ const SummariseBtn = styled.button`
     background: ${({ theme }) => theme.border}44;
   }
 
-  ${({ $loading }) => $loading && `
+  ${({ $loading }) => $loading && css`
     animation: ${pulse} 1.5s ease-in-out infinite;
     cursor: wait;
   `}
