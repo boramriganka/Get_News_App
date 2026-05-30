@@ -8,6 +8,7 @@ import ArticleDetail from "./components/ArticleDetail";
 import CategoryNews from "./components/CategoryNews";
 import SearchResults from "./components/SearchResults";
 import SavedArticles from "./components/SavedArticles";
+import ReadQueuePage from "./components/ReadQueuePage";
 
 const AppRoutes = () => (
     <Routes>
@@ -16,6 +17,7 @@ const AppRoutes = () => (
         <Route path="/category/:id" element={<CategoryNews />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/saved" element={<SavedArticles />} />
+        <Route path="/queue" element={<ReadQueuePage />} />
         <Route path="/article/:id" element={<ArticleDetail />} />
     </Routes>
 )

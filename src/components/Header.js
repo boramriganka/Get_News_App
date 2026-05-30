@@ -6,6 +6,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CloseIcon from '@mui/icons-material/Close';
+import { useSelector } from 'react-redux';
+import Badge from '@mui/material/Badge';
 
 const NavContainer = styled.nav`
   position: sticky;
@@ -169,6 +171,7 @@ const Header = ({ theme, toggleTheme }) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const queueCount = useSelector(state => state.ReadQueue.items.length);
 
   const handleSearchSubmit = (e) => {
     if (e.key === 'Enter' && query.trim()) {
@@ -193,6 +196,16 @@ const Header = ({ theme, toggleTheme }) => {
             <NavLink to="/category/technology" $active={location.pathname === '/category/technology'}>Technology</NavLink>
             <NavLink to="/category/business" $active={location.pathname === '/category/business'}>Business</NavLink>
             <NavLink to="/category/entertainment" $active={location.pathname === '/category/entertainment'}>Entertainment</NavLink>
+            <NavLink to="/queue" $active={location.pathname === '/queue'}>
+              Queue
+              {queueCount > 0 && (
+                <Badge
+                  badgeContent={queueCount}
+                  color="error"
+                  sx={{ ml: 1, '& .MuiBadge-badge': { fontSize: '0.6rem', height: '16px', minWidth: '16px' } }}
+                />
+              )}
+            </NavLink>
           </NavLinks>
 
           <ActionGroup>
