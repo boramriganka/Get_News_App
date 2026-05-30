@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,6 +9,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import ImageWithFallback from './ImageWithFallback';
 import { BIAS_MAP } from '../data/sourceBias';
 import ArticleCard from './ArticleCard';
+import { cleanArticleContent } from '../utils/cleanContent';
 
 const DetailContainer = styled.div`
   max-width: 1280px;
@@ -295,49 +296,39 @@ const ExternalLink = styled.a`
   }
 `;
 
+const summaryCache = new Map();
+
 const ArticleDetail = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const bookmarks = useSelector(state => state.Bookmarks.bookmarks);
-  const allArticles = useSelector(state => [
-    ...state.FetchTech.techNews,
-    ...state.CustomSearch.customNews,
-    ...state.CategoryNews.categoryNews,
-    ...state.Search.news
-  ]);
+
+  const techNews = useSelector(state => state.FetchTech.techNews);
+  const customNews = useSelector(state => state.CustomSearch.customNews);
+  const categoryNews = useSelector(state => state.CategoryNews.categoryNews);
+  const searchNews = useSelector(state => state.Search.news);
+
+  const allArticles = useMemo(() => [
+    ...techNews,
+    ...customNews,
+    ...categoryNews,
+    ...searchNews
+  ], [techNews, customNews, categoryNews, searchNews]);
+
   const article = state?.article;
 
-  const [summaryStatus, setSummaryStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
-  const [summaryText, setSummaryText] = useState('');
-  const [showSummary, setShowSummary] = useState(false);
-  const [isSummariseAvailable, setIsSummariseAvailable] = useState(true);
+  const [summaryStatus, setSummaryStatus] = useState(() =>
+    summaryCache.has(state?.article?.url) ? 'success' : 'idle'
+  );
+  const [summaryText, setSummaryText] = useState(() =>
+    summaryCache.get(state?.article?.url) || ''
+  );
+  const [showSummary, setShowSummary] = useState(summaryCache.has(state?.article?.url));
+  const [loadProgress, setLoadProgress] = useState(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-
-    // Check if summarisation is available (graceful degradation)
-    // We do a HEAD request or a dummy fetch to check the endpoint
-    fetch('/api/summarise', { method: 'POST', body: JSON.stringify({}) })
-      .then(res => {
-        if (res.status === 405) {
-          // If it returns 405, it might be due to missing API key or wrong method.
-          // The server returns 405 if ANTHROPIC_API_KEY is missing.
-          res.json().then(data => {
-            if (data.error === 'Summarisation unconfigured') {
-              setIsSummariseAvailable(false);
-            }
-          });
-        }
-      })
-      .catch(() => {
-        // Ignore errors, assume available if we can't reach it
-      });
-  }, []);
-
-  const cleanArticleContent = useCallback((text) => {
-    if (!text) return '';
-    return text.replace(/\[\+\d+ chars?\]/g, '').trim().substring(0, 1500);
   }, []);
 
   const handleSummarise = async () => {
@@ -348,30 +339,48 @@ const ArticleDetail = () => {
 
     setSummaryStatus('loading');
     try {
-      const response = await fetch('/api/summarise', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: article.title,
-          description: article.description,
-          content: article.content,
-          url: article.url
-        }),
+      // Use standard dynamic import but handle potential build issues by ensuring we're treating as a promise
+      // However, CRA 5 might still struggle with external HTTPS imports.
+      // A safer way is to use a global variable after loading the script via a tag,
+      // but let's try to fix the import if possible.
+
+      // eslint-disable-next-line no-new-func
+      const module = await new Function('return import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2")')();
+      const { pipeline, env } = module;
+
+      // Configure local models (no backend required)
+      env.allowLocalModels = false;
+
+      const summarizer = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6', {
+        progress_callback: (data) => {
+          if (data.status === 'progress') {
+            setLoadProgress(Math.round(data.progress));
+          }
+        }
       });
 
-      const data = await response.json();
+      const textToSummarize = `Title: ${article.title}\nDescription: ${article.description}\nContent: ${cleanArticleContent(article.content)}`;
 
-      if (response.ok) {
-        setSummaryText(data.summary);
-        setSummaryStatus('success');
-        setShowSummary(true);
-      } else {
-        setSummaryStatus('error');
-      }
+      const output = await summarizer(textToSummarize, {
+        max_new_tokens: 100,
+        iteration_callback: () => {
+           // Provide feedback that it's generating
+        }
+      });
+
+      const rawSummary = output[0].summary_text;
+
+      // Format as 3 bullets as originally requested, though the local model might not be as precise as Claude
+      // We'll split by sentences and take first 3, or use the raw output.
+      const sentences = rawSummary.split(/[.!?]+\s/).filter(s => s.length > 10).slice(0, 3);
+      const formattedSummary = (sentences.map(s => `• ${s.trim()}.`).join('\n')) || rawSummary;
+
+      summaryCache.set(article.url, formattedSummary);
+      setSummaryText(formattedSummary);
+      setSummaryStatus('success');
+      setShowSummary(true);
     } catch (error) {
-      console.error('Summarisation fetch error:', error);
+      console.error('Local summarisation error:', error);
       setSummaryStatus('error');
     }
   };
@@ -451,7 +460,7 @@ const ArticleDetail = () => {
       </HeroSection>
 
       <MainContent>
-        {isSummariseAvailable && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <SummariseBtn
               onClick={handleSummarise}
@@ -459,13 +468,18 @@ const ArticleDetail = () => {
               $loading={summaryStatus === 'loading'}
             >
               <span>✦</span>
-              {summaryStatus === 'loading' ? 'Summarising…' :
+              {summaryStatus === 'loading' ? (loadProgress < 100 ? `Downloading Model (${loadProgress}%)` : 'Summarising…') :
                summaryStatus === 'success' ? (showSummary ? 'Hide summary' : 'Read in 30 sec') :
                'Read in 30 sec'}
             </SummariseBtn>
             {summaryStatus === 'error' && <ErrorText>Summary unavailable</ErrorText>}
           </div>
-        )}
+          {summaryStatus === 'loading' && loadProgress > 0 && loadProgress < 100 && (
+            <div style={{ width: '200px', height: '4px', background: '#eee', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ width: `${loadProgress}%`, height: '100%', background: '#F5A623', transition: 'width 0.3s' }} />
+            </div>
+          )}
+        </div>
 
         {showSummary && summaryStatus === 'success' && (
           <SummaryBox>
@@ -501,6 +515,7 @@ const ArticleDetail = () => {
 
           const stopwords = new Set(['the', 'and', 'a', 'to', 'of', 'in', 'is', 'it', 'on', 'that', 'with', 'for', 'was', 'at', 'by', 'as', 'an', 'be', 'this', 'from']);
           const getKeywords = (title) => {
+            if (!title) return [];
             return title
               .toLowerCase()
               .replace(/[^\w\s]/g, '')
