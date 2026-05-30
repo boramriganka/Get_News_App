@@ -4,6 +4,9 @@ import { fetchCustomNews } from "../actions/fetch_custom_news";
 import styled from 'styled-components';
 import ArticleCard from './ArticleCard';
 import SkeletonCard from './SkeletonCard';
+import InfoIcon from '@mui/icons-material/Info';
+import Popover from '@mui/material/Popover';
+import Typography from '@mui/material/Typography';
 
 const PageContainer = styled.div`
   padding: 2rem 1.5rem;
@@ -22,6 +25,24 @@ const Title = styled.h1`
   line-height: 1;
   margin: 0;
   letter-spacing: -0.04em;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`;
+
+const InfoButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.textSecondary};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -160,6 +181,17 @@ const Main = () => {
     const [source, setSource] = useState("");
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+
+    const handleInfoClick = (event) => {
+      setAnchorEl(event.currentTarget);
+    };
+
+    const handleInfoClose = () => {
+      setAnchorEl(null);
+    };
+
+    const open = Boolean(anchorEl);
 
     const customNewsSelector = useSelector((state) => state.CustomSearch);
     const dispatch = useDispatch();
@@ -208,7 +240,40 @@ const Main = () => {
     return (
         <PageContainer>
             <HeaderSection>
-                <Title>Journal Dispatch</Title>
+                <Title>
+                  Journal Dispatch
+                  <InfoButton onClick={handleInfoClick}>
+                    <InfoIcon sx={{ fontSize: 32 }} />
+                  </InfoButton>
+                </Title>
+                <Popover
+                  open={open}
+                  anchorEl={anchorEl}
+                  onClose={handleInfoClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                  }}
+                  PaperProps={{
+                    sx: {
+                      p: 3,
+                      maxWidth: 350,
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                      borderRadius: '12px'
+                    }
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 800, mb: 1, fontFamily: 'Inter' }}>
+                    About Political Bias Labels
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+                    These labels represent approximations of news source positioning (Left, Centre-Left, Centre, Centre-Right, Right) for informational context. They are not editorial judgments and should be used to understand diverse perspectives.
+                  </Typography>
+                </Popover>
                 <Subtitle>
                     {sources.length || '...'} curated sources at your fingertips.
                 </Subtitle>
