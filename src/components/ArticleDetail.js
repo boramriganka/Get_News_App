@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -300,6 +300,7 @@ const summaryCache = new Map();
 
 const ArticleDetail = () => {
   const { state } = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const bookmarks = useSelector(state => state.Bookmarks.bookmarks);
@@ -309,22 +310,26 @@ const ArticleDetail = () => {
   const categoryNews = useSelector(state => state.CategoryNews.categoryNews);
   const searchNews = useSelector(state => state.Search.news);
 
-  const allArticles = useMemo(() => [
-    ...techNews,
-    ...customNews,
-    ...categoryNews,
-    ...searchNews
-  ], [techNews, customNews, categoryNews, searchNews]);
+  const allArticles = useMemo(() => {
+    const combined = [
+      ...techNews,
+      ...customNews,
+      ...categoryNews,
+      ...searchNews
+    ];
+    // Deduplicate by URL
+    return combined.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
+  }, [techNews, customNews, categoryNews, searchNews]);
 
-  const article = state?.article;
+  const article = state?.article || allArticles.find(a => a.title === decodeURIComponent(id));
 
   const [summaryStatus, setSummaryStatus] = useState(() =>
-    summaryCache.has(state?.article?.url) ? 'success' : 'idle'
+    summaryCache.has(article?.url) ? 'success' : 'idle'
   );
   const [summaryText, setSummaryText] = useState(() =>
-    summaryCache.get(state?.article?.url) || ''
+    summaryCache.get(article?.url) || ''
   );
-  const [showSummary, setShowSummary] = useState(summaryCache.has(state?.article?.url));
+  const [showSummary, setShowSummary] = useState(summaryCache.has(article?.url));
   const [loadProgress, setLoadProgress] = useState(0);
 
   useEffect(() => {
@@ -525,14 +530,14 @@ const ArticleDetail = () => {
           };
 
           const currentKeywords = getKeywords(article.title);
-          const currentSourceId = article.source?.id || article.source?.name?.toLowerCase().replace(/\s+/g, '-');
+          const currentSourceId = article.source?.id || article.source?.name?.toLowerCase()?.replace(/\s+/g, '-');
           const currentBias = BIAS_MAP[currentSourceId]?.label;
 
           const perspectives = allArticles
             .filter(a => a.url !== article.url) // Not the current article
             .filter((a, index, self) => self.findIndex(t => t.url === a.url) === index) // Unique by URL
             .filter(a => {
-              const otherSourceId = a.source?.id || a.source?.name?.toLowerCase().replace(/\s+/g, '-');
+              const otherSourceId = a.source?.id || a.source?.name?.toLowerCase()?.replace(/\s+/g, '-');
               const otherBias = BIAS_MAP[otherSourceId]?.label;
               if (!otherBias || otherBias === currentBias) return false;
 

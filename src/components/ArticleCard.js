@@ -207,7 +207,7 @@ const ArticleCard = ({ article, variant = 'compact' }) => {
   const isInQueue = queueItems.some(item => item.url === article.url);
 
   const readingTime = estimateReadingTime((article.description || '') + (article.content || ''));
-  const sourceId = article.source?.id || article.source?.name?.toLowerCase().replace(/\s+/g, '-');
+  const sourceId = article.source?.id || article.source?.name?.toLowerCase()?.replace(/\s+/g, '-');
 
   const handleCardClick = (e) => {
     if (e.target.closest('.no-nav')) return;
