@@ -4,7 +4,6 @@ import customSearch from "../reducers/custom_search";
 import categoryReducer from "../reducers/category_reducer";
 import searchReducer from "../reducers/search_reducer";
 import bookmarksReducer from "../reducers/bookmarks_reducer";
-import readQueueReducer from "../store/readQueueSlice";
 
 
 //combine reducers
@@ -14,8 +13,7 @@ const reducers= combineReducers({
     CustomSearch: customSearch,
     CategoryNews: categoryReducer,
     Search: searchReducer,
-    Bookmarks: bookmarksReducer,
-    ReadQueue: readQueueReducer
+    Bookmarks: bookmarksReducer
 });
 
 export default reducers;
