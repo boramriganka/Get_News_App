@@ -311,30 +311,68 @@ const ArticleDetail = () => {
   const searchNews = useSelector(state => state.Search.news);
 
   const allArticles = useMemo(() => {
+    const flattenedCategoryNews = Object.values(categoryNews).flat().filter(a => typeof a === 'object' && a !== null);
+
     const combined = [
       ...techNews,
       ...customNews,
-      ...categoryNews,
+      ...flattenedCategoryNews,
       ...searchNews
     ];
     // Deduplicate by URL
-    return combined.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
+    return combined.filter((v, i, a) => a && a.findIndex(t => t && t.url === v.url) === i);
   }, [techNews, customNews, categoryNews, searchNews]);
 
-  const article = state?.article || allArticles.find(a => a.title === decodeURIComponent(id));
+  const articleFromStore = useMemo(() => {
+    if (state?.article) return state.article;
+    const decodedId = decodeURIComponent(id);
+    return allArticles.find(a => a.title === decodedId || a.title === id);
+  }, [state?.article, id, allArticles]);
 
-  const [summaryStatus, setSummaryStatus] = useState(() =>
-    summaryCache.has(article?.url) ? 'success' : 'idle'
-  );
-  const [summaryText, setSummaryText] = useState(() =>
-    summaryCache.get(article?.url) || ''
-  );
-  const [showSummary, setShowSummary] = useState(summaryCache.has(article?.url));
   const [loadProgress, setLoadProgress] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchedArticle, setSearchedArticle] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+
+    if (!articleFromStore && id) {
+      const decodedId = decodeURIComponent(id);
+      setIsSearching(true);
+      fetch(`/api/news?endpoint=everything&q="${encodeURIComponent(decodedId)}"&pageSize=1`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'ok' && data.articles.length > 0) {
+            // Find the best match
+            const match = data.articles.find(a => a.title === decodedId) || data.articles[0];
+            setSearchedArticle(match);
+          }
+          setIsSearching(false);
+        })
+        .catch(err => {
+          console.error('Search fallback error:', err);
+          setIsSearching(false);
+        });
+    }
+  }, [articleFromStore, id]);
+
+  const activeArticle = articleFromStore || searchedArticle;
+
+  const [summaryStatus, setSummaryStatus] = useState('idle');
+  const [summaryText, setSummaryText] = useState('');
+  const [showSummary, setShowSummary] = useState(false);
+
+  useEffect(() => {
+    if (activeArticle?.url && summaryCache.has(activeArticle.url)) {
+      setSummaryStatus('success');
+      setSummaryText(summaryCache.get(activeArticle.url));
+      setShowSummary(true);
+    } else {
+      setSummaryStatus('idle');
+      setSummaryText('');
+      setShowSummary(false);
+    }
+  }, [activeArticle?.url]);
 
   const handleSummarise = async () => {
     if (summaryStatus === 'success') {
@@ -344,16 +382,16 @@ const ArticleDetail = () => {
 
     setSummaryStatus('loading');
     try {
-      // Use standard dynamic import but handle potential build issues by ensuring we're treating as a promise
-      // However, CRA 5 might still struggle with external HTTPS imports.
-      // A safer way is to use a global variable after loading the script via a tag,
-      // but let's try to fix the import if possible.
+      const summaryTextToUse = activeArticle.content || activeArticle.description;
+      if (!summaryTextToUse) {
+        setSummaryStatus('error');
+        return;
+      }
 
       // eslint-disable-next-line no-new-func
       const module = await new Function('return import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2")')();
       const { pipeline, env } = module;
 
-      // Configure local models (no backend required)
       env.allowLocalModels = false;
 
       const summarizer = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6', {
@@ -364,23 +402,19 @@ const ArticleDetail = () => {
         }
       });
 
-      const textToSummarize = `Title: ${article.title}\nDescription: ${article.description}\nContent: ${cleanArticleContent(article.content)}`;
+      const textToSummarize = `Title: ${activeArticle.title}\nDescription: ${activeArticle.description}\nContent: ${cleanArticleContent(activeArticle.content)}`;
 
       const output = await summarizer(textToSummarize, {
         max_new_tokens: 100,
         iteration_callback: () => {
-           // Provide feedback that it's generating
         }
       });
 
       const rawSummary = output[0].summary_text;
-
-      // Format as 3 bullets as originally requested, though the local model might not be as precise as Claude
-      // We'll split by sentences and take first 3, or use the raw output.
       const sentences = rawSummary.split(/[.!?]+\s/).filter(s => s.length > 10).slice(0, 3);
       const formattedSummary = (sentences.map(s => `• ${s.trim()}.`).join('\n')) || rawSummary;
 
-      summaryCache.set(article.url, formattedSummary);
+      summaryCache.set(activeArticle.url, formattedSummary);
       setSummaryText(formattedSummary);
       setSummaryStatus('success');
       setShowSummary(true);
@@ -390,7 +424,7 @@ const ArticleDetail = () => {
     }
   };
 
-  if (!article) {
+  if (!activeArticle) {
     return (
       <DetailContainer>
         <BackNav>
@@ -399,14 +433,16 @@ const ArticleDetail = () => {
           </IconButton>
         </BackNav>
         <ArticleHeader>
-           <Title>Story not found</Title>
-           <Description>We couldn't locate the article you're looking for.</Description>
+           <Title>{isSearching ? 'Searching...' : 'Story not found'}</Title>
+           <Description>
+             {isSearching ? 'Locating the article in our archives...' : "We couldn't locate the article you're looking for."}
+           </Description>
         </ArticleHeader>
       </DetailContainer>
     );
   }
 
-  const isBookmarked = bookmarks.some(b => b.title === article.title);
+  const isBookmarked = bookmarks.some(b => b.title === activeArticle.title);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Oct 24, 2026';
@@ -429,29 +465,29 @@ const ArticleDetail = () => {
 
       <ArticleHeader>
         <MetaTop>
-          <span>{article.source?.name || 'Top Stories'}</span>
+          <span>{activeArticle.source?.name || 'Top Stories'}</span>
           <span style={{opacity: 0.3}}>|</span>
           <span>5 min read</span>
         </MetaTop>
-        <Title>{article.title}</Title>
-        {article.description && <Description>{article.description}</Description>}
+        <Title>{activeArticle.title}</Title>
+        {activeArticle.description && <Description>{activeArticle.description}</Description>}
       </ArticleHeader>
 
       <MetaBar>
         <AuthorBlock>
-          <div className="name"><span>By</span> {article.author || 'Editorial Staff'}</div>
-          <div className="date">{formatDate(article.publishedAt)}</div>
+          <div className="name"><span>By</span> {activeArticle.author || 'Editorial Staff'}</div>
+          <div className="date">{formatDate(activeArticle.publishedAt)}</div>
         </AuthorBlock>
         <ActionGroup>
           <IconButton onClick={() => {
             if (navigator.share) {
-                navigator.share({ title: article.title, url: article.url });
+                navigator.share({ title: activeArticle.title, url: activeArticle.url });
             }
           }} aria-label="Share story">
             <ShareIcon sx={{ fontSize: 20 }} />
           </IconButton>
           <IconButton
-            onClick={() => dispatch({ type: 'TOGGLE_BOOKMARK', payload: article })}
+            onClick={() => dispatch({ type: 'TOGGLE_BOOKMARK', payload: activeArticle })}
             aria-label={isBookmarked ? "Remove bookmark" : "Save story"}
             $active={isBookmarked}
           >
@@ -461,7 +497,7 @@ const ArticleDetail = () => {
       </MetaBar>
 
       <HeroSection>
-        <ImageWithFallback src={article.urlToImage} alt={article.title} />
+        <ImageWithFallback src={activeArticle.urlToImage} alt={activeArticle.title} />
       </HeroSection>
 
       <MainContent>
@@ -509,14 +545,14 @@ const ArticleDetail = () => {
 
         <BodyText>
           <span className="summary-label">Story Summary</span>
-          <p>{cleanArticleContent(article.content) || article.description}</p>
-          <ExternalLink href={article.url} target="_blank" rel="noopener noreferrer">
-            Read full story at {article.source?.name || 'source'}
+          <p>{cleanArticleContent(activeArticle.content) || activeArticle.description}</p>
+          <ExternalLink href={activeArticle.url} target="_blank" rel="noopener noreferrer">
+            Read full story at {activeArticle.source?.name || 'source'}
           </ExternalLink>
         </BodyText>
 
         {(() => {
-          if (!article || !allArticles.length) return null;
+          if (!activeArticle || !allArticles.length) return null;
 
           const stopwords = new Set(['the', 'and', 'a', 'to', 'of', 'in', 'is', 'it', 'on', 'that', 'with', 'for', 'was', 'at', 'by', 'as', 'an', 'be', 'this', 'from']);
           const getKeywords = (title) => {
@@ -529,12 +565,12 @@ const ArticleDetail = () => {
               .slice(0, 5);
           };
 
-          const currentKeywords = getKeywords(article.title);
-          const currentSourceId = article.source?.id || article.source?.name?.toLowerCase()?.replace(/\s+/g, '-');
+          const currentKeywords = getKeywords(activeArticle.title);
+          const currentSourceId = activeArticle.source?.id || activeArticle.source?.name?.toLowerCase()?.replace(/\s+/g, '-');
           const currentBias = BIAS_MAP[currentSourceId]?.label;
 
           const perspectives = allArticles
-            .filter(a => a.url !== article.url) // Not the current article
+            .filter(a => a.url !== activeArticle.url) // Not the current article
             .filter((a, index, self) => self.findIndex(t => t.url === a.url) === index) // Unique by URL
             .filter(a => {
               const otherSourceId = a.source?.id || a.source?.name?.toLowerCase()?.replace(/\s+/g, '-');
