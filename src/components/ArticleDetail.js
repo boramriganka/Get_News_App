@@ -305,19 +305,19 @@ const ArticleDetail = () => {
   const dispatch = useDispatch();
   const bookmarks = useSelector(state => state.Bookmarks.bookmarks);
 
-  const techNews = useSelector(state => state.FetchTech.techNews);
-  const customNews = useSelector(state => state.CustomSearch.customNews);
-  const categoryNews = useSelector(state => state.CategoryNews.categoryNews);
-  const searchNews = useSelector(state => state.Search.news);
+  const techNews = useSelector(state => state.FetchTech.techNews || []);
+  const customNews = useSelector(state => state.CustomSearch.customNews || []);
+  const categoryNews = useSelector(state => state.CategoryNews.categoryNews || {});
+  const searchNews = useSelector(state => state.Search.searchResults || []);
 
   const allArticles = useMemo(() => {
     const flattenedCategoryNews = Object.values(categoryNews).flat().filter(a => typeof a === 'object' && a !== null);
 
     const combined = [
-      ...techNews,
-      ...customNews,
+      ...(Array.isArray(techNews) ? techNews : []),
+      ...(Array.isArray(customNews) ? customNews : []),
       ...flattenedCategoryNews,
-      ...searchNews
+      ...(Array.isArray(searchNews) ? searchNews : [])
     ];
     // Deduplicate by URL
     return combined.filter((v, i, a) => a && a.findIndex(t => t && t.url === v.url) === i);
